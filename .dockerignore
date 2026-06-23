@@ -1,0 +1,17 @@
+.git
+.gitignore
+.dockerignore
+.claude
+README.md
+*.md
+node_modules
+
+# Tests / JS tooling / local orchestration — not part of the runtime image.
+tests
+package.json
+.github
+compose.yaml
+
+# Built artefacts that get re-generated inside the build:
+public/styles.css
+public/config.js

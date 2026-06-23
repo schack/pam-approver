@@ -1,0 +1,24 @@
+# Built/local artefacts
+public/styles.css
+public/config.js
+
+# Local secrets / config (never commit)
+.env
+.env.*
+!.env.example
+
+# Local Tailwind CLI binary
+tailwindcss
+tailwindcss-*
+
+# Node (tests use the built-in runner; no deps, but never commit these)
+node_modules/
+npm-debug.log*
+
+# Editor
+.DS_Store
+.vscode/
+.idea/
+
+# Claude Code session-local settings
+.claude/

@@ -1,0 +1,32 @@
+# Local testing:
+#   cp .env.example .env && $EDITOR .env
+#   docker compose up --build
+#   open http://localhost:8080   (use localhost, NOT 127.0.0.1 — the dev OAuth
+#                                 client only allows the localhost origin)
+#
+# This mirrors the hardened runtime the image is built for, so local == prod:
+# an immutable rootfs with writable tmpfs only where needed, no Linux
+# capabilities, and no privilege escalation. The same file works on Synology
+# Container Manager (or any Docker host) as a documented secure run config.
+services:
+  pam-approver:
+    build: .
+    image: pam-approver:dev
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    read_only: true                 # rootfs is immutable…
+    # …except two tmpfs mounts. mode 1777 so the non-root (uid 101) process can
+    # write — a bare tmpfs is mounted root-owned and would deny writes.
+    volumes:
+      - type: tmpfs                  # nginx temp paths + pid (see nginx.conf)
+        target: /tmp
+        tmpfs: { mode: 0o1777 }
+      - type: tmpfs                  # where entrypoint.sh renders config.js
+        target: /var/lib/pam-approver
+        tmpfs: { mode: 0o1777 }
+    cap_drop:
+      - ALL                         # static nginx needs no Linux capabilities
+    security_opt:
+      - no-new-privileges:true      # block setuid/setgid privilege escalation

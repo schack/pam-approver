@@ -1,0 +1,147 @@
+name: Update Tailwind CSS
+
+# Tailwind is the one dependency Dependabot can't track in this repo: it's the
+# standalone CLI binary fetched and SHA-256 verified in the Dockerfile, not the
+# npm package (see README "Build" notes). This job mirrors that pinning
+# (version + per-arch hash) and honours the same 21-day cooldown used in
+# .github/dependabot.yml — it opens a PR only for a release that old or older.
+#
+# Note: PRs opened with the default GITHUB_TOKEN do not trigger other workflows
+# (GitHub's recursion guard), so cd.yml may not run automatically on the PR.
+# That's fine here — this job already downloads BOTH arch binaries and verifies
+# them against the release's published checksums before writing the Dockerfile,
+# and cd.yml runs in full on merge to main.
+
+on:
+  schedule:
+    # Weekly, Mondays at 06:17 UTC (off the hour to dodge the cron rush).
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  REPO: tailwindlabs/tailwindcss
+  COOLDOWN_DAYS: "21"
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Determine target version
+        id: target
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          current="$(sed -n 's/^ARG TAILWIND_VERSION=//p' Dockerfile)"
+          echo "Pinned version:  $current"
+
+          cutoff=$(( $(date -u +%s) - COOLDOWN_DAYS * 86400 ))
+
+          # Highest stable release published before the cooldown cutoff.
+          latest="$(gh api "repos/$REPO/releases?per_page=100" \
+            --jq "[ .[]
+                    | select(.draft == false and .prerelease == false)
+                    | select((.published_at | fromdateiso8601) < $cutoff)
+                    | .tag_name | ltrimstr(\"v\") ]
+                  | sort_by(split(\".\") | map(tonumber)) | last // \"\"")"
+          echo "Latest cooled:   $latest"
+
+          # Only move forward; never downgrade or re-pin the same version.
+          newest="$(printf '%s\n%s\n' "$current" "$latest" | sort -V | tail -1)"
+          if [ -z "$latest" ] || [ "$latest" = "$current" ] || [ "$newest" != "$latest" ]; then
+            echo "Already up to date with the cooled release. Nothing to do."
+            echo "up_to_date=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "up_to_date=false" >> "$GITHUB_OUTPUT"
+            echo "version=$latest"  >> "$GITHUB_OUTPUT"
+            echo "current=$current" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Fetch and verify checksums
+        if: steps.target.outputs.up_to_date == 'false'
+        id: hashes
+        env:
+          V: ${{ steps.target.outputs.version }}
+        run: |
+          set -euo pipefail
+          base="https://github.com/$REPO/releases/download/v$V"
+
+          curl -fsSL -o sha256sums.txt "$base/sha256sums.txt"
+          amd64="$(awk '$2 == "./tailwindcss-linux-x64"   {print $1}' sha256sums.txt)"
+          arm64="$(awk '$2 == "./tailwindcss-linux-arm64" {print $1}' sha256sums.txt)"
+          [ -n "$amd64" ] && [ -n "$arm64" ] || { echo "checksums not found in sha256sums.txt"; exit 1; }
+
+          # Verify the published checksums against the actual binaries before we
+          # trust them — same guarantee the Dockerfile's `sha256sum -c` gives.
+          # Both arches are pinned: CI builds amd64, but the assets stage runs
+          # natively on an arm64 dev machine too, so the arm64 hash must stay current.
+          curl -fsSL -o tw-x64   "$base/tailwindcss-linux-x64"
+          curl -fsSL -o tw-arm64 "$base/tailwindcss-linux-arm64"
+          echo "$amd64  tw-x64"   | sha256sum -c -
+          echo "$arm64  tw-arm64" | sha256sum -c -
+          rm -f tw-x64 tw-arm64 sha256sums.txt
+
+          echo "amd64=$amd64" >> "$GITHUB_OUTPUT"
+          echo "arm64=$arm64" >> "$GITHUB_OUTPUT"
+
+      - name: Open pull request
+        if: steps.target.outputs.up_to_date == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          V: ${{ steps.target.outputs.version }}
+          CUR: ${{ steps.target.outputs.current }}
+          AMD64: ${{ steps.hashes.outputs.amd64 }}
+          ARM64: ${{ steps.hashes.outputs.arm64 }}
+        run: |
+          set -euo pipefail
+
+          branch="tailwind-update/v$V"
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+            echo "Branch $branch already exists; PR likely open. Skipping."
+            exit 0
+          fi
+
+          sed -i \
+            -e "s/^ARG TAILWIND_VERSION=.*/ARG TAILWIND_VERSION=$V/" \
+            -e "s/^ARG TAILWIND_SHA256_AMD64=.*/ARG TAILWIND_SHA256_AMD64=$AMD64/" \
+            -e "s/^ARG TAILWIND_SHA256_ARM64=.*/ARG TAILWIND_SHA256_ARM64=$ARM64/" \
+            Dockerfile
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add Dockerfile
+          git commit -m "Bump Tailwind CSS standalone CLI from $CUR to $V"
+          git push origin "$branch"
+
+          gh pr create \
+            --base main \
+            --head "$branch" \
+            --title "Bump Tailwind CSS from $CUR to $V" \
+            --label dependencies \
+            --body "$(cat <<EOF
+          Bumps the Tailwind CSS standalone CLI from **$CUR** to **$V**.
+
+          Both per-arch SHA-256 hashes in the Dockerfile were taken from the
+          release's \`sha256sums.txt\` and verified in CI against the actual
+          downloaded binaries before this PR was opened:
+
+          - \`linux-x64\`   → \`$AMD64\`
+          - \`linux-arm64\` → \`$ARM64\`
+
+          Release notes: https://github.com/$REPO/releases/tag/v$V
+
+          Opened by the \`Update Tailwind CSS\` workflow, which only targets
+          releases past the 21-day cooldown (matching \`.github/dependabot.yml\`).
+          EOF
+          )"

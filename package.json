@@ -1,0 +1,10 @@
+{
+  "name": "pam-approver",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Mobile-friendly approver UI for Google Cloud Privileged Access Manager",
+  "scripts": {
+    "test": "node --test"
+  }
+}
