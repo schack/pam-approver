@@ -1,5 +1,8 @@
 # pam-approver
 
+[![CD Pipeline](https://github.com/schack/pam-approver/actions/workflows/cd.yml/badge.svg)](https://github.com/schack/pam-approver/actions/workflows/cd.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/schack/pam-approver/badge)](https://scorecard.dev/viewer/?uri=github.com/schack/pam-approver)
+
 Mobile-friendly approver UI for Google Cloud Privileged Access Manager (PAM).
 
 A **single-page app**: nginx serves static HTML/JS/CSS; the browser talks
