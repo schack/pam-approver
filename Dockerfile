@@ -24,8 +24,8 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # This assets stage runs on $BUILDPLATFORM (the builder), not the target
-# platform, so the Tailwind CLI must match the *builder's* arch — amd64 on the
-# CI runner, arm64 on an Apple Silicon dev machine — or it can't execute. The
+# platform, so the Tailwind CLI must match the *builder's* arch (amd64 on the
+# CI runner, arm64 on an Apple Silicon dev machine) or it can't execute. The
 # CSS it emits is arch-independent, so it's built once and shared by every
 # target platform of the multi-arch runtime image.
 RUN set -eux; \
