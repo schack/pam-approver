@@ -17,8 +17,6 @@ their pocket.
   <img src="docs/pam-approver-mobile.png"
        alt="pam-approver on a phone: a pending PAM grant card showing requester, roles, duration and a reason field with Deny / Approve buttons"
        width="320">
-  <br>
-  <sub><i>Sample data — not a real environment.</i></sub>
 </p>
 
 ## How it fits together
