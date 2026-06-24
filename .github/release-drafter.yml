@@ -6,13 +6,17 @@ tag-template: '$RESOLVED_VERSION'
 # Each merged PR is filed under the category whose label it carries.
 categories:
   - title: '🔒 Security'
-    labels: [security]
+    when:
+      labels: [security]
   - title: '✨ Features'
-    labels: [enhancement]
+    when:
+      labels: [enhancement]
   - title: '🐛 Fixes'
-    labels: [fix, bug]
+    when:
+      labels: [fix, bug]
   - title: '📦 Dependencies'
-    labels: [dependencies]
+    when:
+      labels: [dependencies]
 
 change-template: '- $TITLE (#$NUMBER)'
 no-changes-template: '- No user-facing changes.'
