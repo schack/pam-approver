@@ -196,6 +196,10 @@ docker run --rm -p 8080:8080 --env-file .env pam-approver:dev
   image-filter, njs, acme) this static site never loads. The base image is
   pinned by **tag and digest** so Dependabot
   keeps updates on the alpine-slim variant instead of drifting onto Debian.
+  The image is published **multi-arch** (`linux/amd64` + `linux/arm64`) so it
+  schedules on either GKE node-pool architecture; the runtime carries no
+  compiled code, so the arm64 variant is the same static files on the
+  per-arch nginx base.
 - **Dependency updates.** Base images and GitHub Actions are kept current by
   Dependabot (`.github/dependabot.yml`, 21-day cooldown). Tailwind is the
   standalone CLI binary rather than the npm package, which Dependabot can't

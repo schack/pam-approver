@@ -23,9 +23,11 @@ RUN apt-get update \
        ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# The runtime image is amd64-only (Synology target), but this assets stage runs
-# on $BUILDPLATFORM, so the Tailwind CLI must match the *builder's* arch — amd64
-# in CI, arm64 on an Apple Silicon dev machine — or it can't execute.
+# This assets stage runs on $BUILDPLATFORM (the builder), not the target
+# platform, so the Tailwind CLI must match the *builder's* arch — amd64 on the
+# CI runner, arm64 on an Apple Silicon dev machine — or it can't execute. The
+# CSS it emits is arch-independent, so it's built once and shared by every
+# target platform of the multi-arch runtime image.
 RUN set -eux; \
     case "${BUILDARCH:-amd64}" in \
       amd64) tw_arch=x64;   tw_sha=${TAILWIND_SHA256_AMD64} ;; \
