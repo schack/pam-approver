@@ -19,6 +19,7 @@ npm-debug.log*
 .DS_Store
 .vscode/
 .idea/
+*.code-workspace
 
 # Claude Code session-local settings
 .claude/

@@ -9,6 +9,16 @@ A **single-page app**: nginx serves static HTML/JS/CSS; the browser talks
 directly to the PAM REST API using a Google OAuth access token. No backend
 state, no database, no server-side credentials.
 
+It exists because the Google Cloud console's PAM approver view is painful on a
+phone — this is a thumb-friendly card UI an on-call approver can act on from
+their pocket.
+
+<p align="center">
+  <img src="docs/pam-approver-mobile.png"
+       alt="pam-approver on a phone: a pending PAM grant card showing requester, roles, duration and a reason field with Deny / Approve buttons"
+       width="320">
+</p>
+
 ## How it fits together
 
 ```
