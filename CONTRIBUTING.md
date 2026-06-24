@@ -36,6 +36,44 @@ sh tests/nginx_headers_test.sh  # builds the image, asserts response headers
 test that covers the new behaviour. Bug fixes should come with a test that fails
 without the fix.
 
+## Releases
+
+Releases are **draft-then-publish**, so you decide when a batch of merges
+becomes a version. You never write a version number or a changelog by hand.
+
+**How it works**
+
+- On every merge to `main`, the `Release Drafter` workflow updates a single
+  *draft* release (private to maintainers; discoverers never see it). It lists
+  each merged PR under a category and proposes the next version.
+- Versions are **CalVer `YEAR.MONTH.SEQUENCE`**, computed automatically: the
+  third number counts releases already cut this month, so a batch of merges
+  keeps the same proposed version until one is published, then the next bumps.
+  Example: first release in June 2026 is `2026.6.0`, the next is `2026.6.1`,
+  the first in July is `2026.7.0`.
+
+**Getting a PR into the right category**
+
+Categories come from PR **labels**, which the autolabeler applies from the
+branch name or PR title, so usually you do nothing:
+
+| Category        | Label          | Triggered by                                   |
+|-----------------|----------------|------------------------------------------------|
+| Features        | `enhancement`  | branch `feat/…` or title `feat: …`             |
+| Fixes           | `fix`          | branch `fix/…` or title `fix: …`               |
+| Security        | `security`     | branch `security/…` or "security" in the title |
+| Dependencies    | `dependencies` | added automatically on Dependabot PRs          |
+
+If a PR lands with no matching label, just add one of the labels above and the
+draft updates. (Config: `.github/release-drafter.yml`.)
+
+**Cutting a release**
+
+1. Go to the repo's **Releases**, open the draft, and check the notes.
+2. Click **Publish**. That creates the CalVer tag and triggers the CD pipeline
+   to build, sign, and push the image as `:X.Y.Z`, `:X.Y`, and `:latest` (see
+   [Container image](README.md#container-image)).
+
 ## Style
 
 Match the surrounding code — no new runtime dependencies (the app ships zero JS

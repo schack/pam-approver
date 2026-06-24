@@ -1,0 +1,36 @@
+# Drafts the next release's notes from merged PRs. The version is injected by
+# the workflow (auto CalVer YEAR.MONTH.SEQUENCE), so the templates just echo it.
+name-template: '$RESOLVED_VERSION'
+tag-template: '$RESOLVED_VERSION'
+
+# Each merged PR is filed under the category whose label it carries.
+categories:
+  - title: '🔒 Security'
+    labels: [security]
+  - title: '✨ Features'
+    labels: [enhancement]
+  - title: '🐛 Fixes'
+    labels: [fix, bug]
+  - title: '📦 Dependencies'
+    labels: [dependencies]
+
+change-template: '- $TITLE (#$NUMBER)'
+no-changes-template: '- No user-facing changes.'
+
+# Auto-apply a category label from the PR title or branch, so notes sort
+# themselves with no manual labelling. Dependabot already adds `dependencies`.
+autolabeler:
+  - label: enhancement
+    title: ['/^feat(\(.+\))?[:!]/i']
+    branch: ['/^feat\//i']
+  - label: fix
+    title: ['/^fix(\(.+\))?[:!]/i']
+    branch: ['/^fix\//i']
+  - label: security
+    title: ['/\bsec(urity)?\b/i']
+    branch: ['/^sec(urity)?\//i']
+
+template: |
+  ## What changed
+
+  $CHANGES
