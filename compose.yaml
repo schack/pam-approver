@@ -6,8 +6,8 @@
 #
 # This mirrors the hardened runtime the image is built for, so local == prod:
 # an immutable rootfs with writable tmpfs only where needed, no Linux
-# capabilities, and no privilege escalation. The same file works on Synology
-# Container Manager (or any Docker host) as a documented secure run config.
+# capabilities, and no privilege escalation. The same file works on any Docker
+# host as a documented secure run config.
 services:
   pam-approver:
     build: .
