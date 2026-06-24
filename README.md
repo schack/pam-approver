@@ -10,7 +10,7 @@ directly to the PAM REST API using a Google OAuth access token. No backend
 state, no database, no server-side credentials.
 
 It exists because the Google Cloud console's PAM approver view is painful on a
-phone — this is a thumb-friendly card UI an on-call approver can act on from
+phone. This is a thumb-friendly card UI an on-call approver can act on from
 their pocket.
 
 <p align="center">
@@ -34,7 +34,7 @@ their pocket.
 ```
 
 - **IAP** sits in front of the nginx pod and gates access to the static asset
-  bundle. It does *not* protect the API calls — those go from the user's
+  bundle. It does *not* protect the API calls; those go from the user's
   browser straight to googleapis.com.
 - **Auth:** Google Identity Services token client runs in the browser,
   popup-based. Returns a 1h access token scoped to `cloud-platform`.
@@ -46,7 +46,7 @@ their pocket.
 ## Approving grants
 
 Each pending grant card has a reason field next to Approve / Deny. Whether a
-reason is mandatory follows the entitlement's own setting —
+reason is mandatory follows the entitlement's own setting,
 `approvalWorkflow.manualApprovals.requireApproverJustification` on the PAM
 entitlement:
 
@@ -57,7 +57,7 @@ entitlement:
   accepts it.
 
 The app reads this flag from the `entitlements:search` response, so the UI
-matches each entitlement automatically — no per-app configuration.
+matches each entitlement automatically, with no per-app configuration.
 
 ## Required environment
 
@@ -77,23 +77,22 @@ by anything that can serve content on `localhost:8080` on a developer's
 laptop (rogue npm dev server, browser extension, vulnerable local tool); a
 production client must not have that surface.
 
-### Common steps (do once)
+Configure the **OAuth consent screen** once (APIs & Services → OAuth consent
+screen) with at least the `https://www.googleapis.com/auth/cloud-platform`
+scope, User type **Internal**. Then create a client per environment:
 
-1. **APIs & Services → OAuth consent screen** — configure with at minimum
-   the `https://www.googleapis.com/auth/cloud-platform` scope. Set User type
-   to **Internal** so only Workspace users in your org can complete the
-   flow.
+<details><summary>Per-environment client steps (dev / prod)</summary>
 
-### `pam-approver (dev)` — local testing
+**`pam-approver (dev)`: local testing**
 
 1. **APIs & Services → Credentials → Create credentials → OAuth client ID**
 2. Application type: **Web application**, name `pam-approver (dev)`
 3. **Authorised JavaScript origins**: `http://localhost:8080`
    *(add other dev hostnames here if you have them)*
-4. **Authorised redirect URIs**: leave empty — token client uses popups
+4. **Authorised redirect URIs**: leave empty (token client uses popups)
 5. Copy the client ID into your local `.env`
 
-### `pam-approver (prod)` — cluster deployment
+**`pam-approver (prod)`: cluster deployment**
 
 1. Same as above, but name `pam-approver (prod)`
 2. **Authorised JavaScript origins**: only your production hostname,
@@ -101,40 +100,54 @@ production client must not have that surface.
 3. Ship the client ID via a Kubernetes Secret/ConfigMap referenced from the
    pod env (`OAUTH_CLIENT_ID`), or via your existing secret manager.
 
+</details>
+
 The client ID is technically public (it ships in `/config.js`), so it's not
-a secret — but treating it like one keeps it out of git and out of dev
+a secret, but treating it like one keeps it out of git and out of dev
 laptops.
 
-## Build
+## Container image
+
+Published to GitHub Container Registry, **multi-arch** (`linux/amd64` +
+`linux/arm64`):
 
 ```bash
-docker build -t pam-approver:dev .
-docker run --rm -i hadolint/hadolint < Dockerfile   # zero warnings
+# latest build of the default branch
+docker pull ghcr.io/schack/pam-approver:latest
+
+# or pin by digest for deploys (immutable)
+docker pull ghcr.io/schack/pam-approver@sha256:<digest>
 ```
+
+Tags are `latest`, `main`, and `sha-<git-sha>` (one per commit). The
+`sha256-*.sig` / `sha256-*.att` entries GHCR lists are the cosign signature and
+SBOM/provenance attestations, **not** images; pull by a real tag or by
+`@sha256:<digest>`, never the `:sha256-…` tag GHCR shows in its install box.
+
+Images are keyless-signed via GitHub OIDC; verify before deploy:
+
+```bash
+cosign verify ghcr.io/schack/pam-approver:latest \
+  --certificate-identity-regexp '^https://github.com/schack/pam-approver/\.github/workflows/cd\.yml@refs/heads/.+$' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+See [Run locally](#run-locally) to start it with your environment, or deploy it
+with your normal Kubernetes manifests.
 
 ## Tests
 
-No npm install — the suites run with tooling that's already on the machine
-(POSIX `sh`, Node's built-in test runner, and Docker for the header check). CI
-runs them as the `test` job in `.github/workflows/cd.yml`, which gates the image
-build on every push and PR (the build `needs: test`).
+No npm install; the suites run with tooling that's already on the machine
+(POSIX `sh`, Node's built-in test runner, and Docker for the header + lint
+checks). CI runs them as the `test` job in `.github/workflows/cd.yml`, which
+gates the image build on every push and PR (the build `needs: test`).
 
 ```bash
 sh tests/entrypoint_test.sh      # entrypoint.sh env validation + config.js render
 node --test                      # pure helpers in public/app.js
 sh tests/nginx_headers_test.sh   # built image serves correct Content-Type per route
+docker run --rm -i hadolint/hadolint < Dockerfile   # Dockerfile lint (zero warnings)
 ```
-
-- **`tests/entrypoint_test.sh`** exercises the injection defense in
-  `entrypoint.sh` (`check_value`) and the rendered `config.js`. It stubs
-  `nginx` and renders to a temp file via the `CONFIG_OUT` override.
-- **`tests/app.test.js`** covers the pure functions in `public/app.js`
-  (`escapeHtml`, `normaliseGrant`, `shortResource`, `formatDuration`,
-  `createLimiter`, `readJSON`, `tokenIsFresh`). `app.js` guards its browser
-  boot behind `typeof document`, so it imports cleanly under Node.
-- **`tests/nginx_headers_test.sh`** builds the image, runs it, and asserts each
-  route returns exactly one correct `Content-Type` (guards the `add_header
-  Content-Type` duplicate-header pitfall). Skips if Docker isn't available.
 
 ## Run locally
 
@@ -145,7 +158,7 @@ cp .env.example .env
 $EDITOR .env
 ```
 
-Then bring it up with Compose — this builds the image and runs it with the same
+Then bring it up with Compose, which builds from source and runs with the same
 hardened runtime intended for production (read-only rootfs, dropped Linux
 capabilities, no privilege escalation):
 
@@ -153,21 +166,18 @@ capabilities, no privilege escalation):
 docker compose up --build
 ```
 
-Open <http://localhost:8080> — use `localhost`, **not** `127.0.0.1`: Google
+To run the published image instead of building from source:
+
+```bash
+docker run --rm -p 8080:8080 --env-file .env ghcr.io/schack/pam-approver:latest
+```
+
+Open <http://localhost:8080>. Use `localhost`, **not** `127.0.0.1`: Google
 treats them as different origins, and the dev OAuth client only allows the
 `localhost` one. Click sign-in and complete the popup.
 
 `.env` is gitignored. You'll need an OAuth client whose **Authorised
 JavaScript origins** include `http://localhost:8080`.
-
-<details><summary>Without Compose (plain Docker)</summary>
-
-```bash
-docker build -t pam-approver:dev .
-docker run --rm -p 8080:8080 --env-file .env pam-approver:dev
-```
-
-</details>
 
 ## Security posture
 
@@ -182,34 +192,29 @@ docker run --rm -p 8080:8080 --env-file .env pam-approver:dev
 - **No long-lived secrets.** No client secret needed for SPA OAuth. No
   refresh tokens. Access tokens are 1h, held in `sessionStorage`
   (cleared when the tab closes).
-- **CORS / CSRF**: not applicable — the browser uses Bearer-token requests
+- **CORS / CSRF**: not applicable; the browser uses Bearer-token requests
   directly to `*.googleapis.com`. There are no cookies on the data path.
 - **Input validation in `entrypoint.sh`** rejects env values containing
   characters that could escape the JS string literals in `/config.js`.
 - **nginx** runs as the unprivileged `nginx` user (uid 101); listens on 8080;
   hides Server token; rate-bounds request body to 8 KB; healthcheck on
   `/healthz`.
-- **Build** is multi-stage and hadolint-clean. Tailwind CLI download is
-  SHA-256 verified. Final image is a pinned nginx alpine-slim image plus our
-  static files (HTML/JS/CSS and the bookmark/home-screen icons) — ~21 MB. The
-  `-slim` variant drops the bundled dynamic modules (xslt, geoip,
-  image-filter, njs, acme) this static site never loads. The base image is
-  pinned by **tag and digest** so Dependabot
-  keeps updates on the alpine-slim variant instead of drifting onto Debian.
-  The image is published **multi-arch** (`linux/amd64` + `linux/arm64`) so it
-  schedules on either GKE node-pool architecture; the runtime carries no
-  compiled code, so the arm64 variant is the same static files on the
-  per-arch nginx base.
+- **Build** is multi-stage and hadolint-clean; the Tailwind CLI download is
+  SHA-256 verified. The final image is a pinned nginx alpine-slim base plus our
+  static files (~21 MB), pinned by **tag and digest** so Dependabot can't drift
+  it onto the larger Debian variant. Published **multi-arch** (`linux/amd64` +
+  `linux/arm64`); the runtime has no compiled code, so the arm64 variant is the
+  same static files on the per-arch base.
 - **Dependency updates.** Base images and GitHub Actions are kept current by
   Dependabot (`.github/dependabot.yml`, 21-day cooldown). Tailwind is the
   standalone CLI binary rather than the npm package, which Dependabot can't
   track, so the `Update Tailwind CSS` workflow
   (`.github/workflows/tailwind-update.yml`) runs weekly and opens a PR when a
-  newer release clears the same 21-day cooldown — bumping the version and both
+  newer release clears the same 21-day cooldown, bumping the version and both
   per-arch SHA-256 hashes after verifying them against the release's published
   checksums.
 
 ## What's intentionally not here
 
-- Server-side audit logging — PAM Cloud Audit Logs already record every
+- Server-side audit logging: PAM Cloud Audit Logs already record every
   approve/deny with the actor's email and the reason.
