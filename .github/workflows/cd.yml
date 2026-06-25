@@ -205,13 +205,11 @@ jobs:
           set -euo pipefail
           # Record exactly which immutable image this release refers to.
           echo "${IMAGE}@${DIGEST}" > image-digest.txt
-          # Checksums over the file assets, then keyless-sign them. The .sig +
-          # .pem pair is what Scorecard recognises as a signed release.
+          # Checksums over the file assets, then keyless-sign them. cosign v3
+          # outputs a Sigstore bundle via --bundle; the .sigstore.json suffix is
+          # one Scorecard recognises as a signed release asset.
           sha256sum sbom.spdx.json image-digest.txt > checksums.txt
-          cosign sign-blob --yes checksums.txt \
-            --output-signature checksums.txt.sig \
-            --output-certificate checksums.txt.pem
+          cosign sign-blob --yes --bundle checksums.txt.sigstore.json checksums.txt
           gh release upload "$TAG" \
-            sbom.spdx.json image-digest.txt checksums.txt \
-            checksums.txt.sig checksums.txt.pem \
+            sbom.spdx.json image-digest.txt checksums.txt checksums.txt.sigstore.json \
             --repo "$GITHUB_REPOSITORY" --clobber
