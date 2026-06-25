@@ -65,6 +65,8 @@ jobs:
   build:
     needs: test
     runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
     permissions:
       contents: read
       packages: write
@@ -159,3 +161,53 @@ jobs:
         uses: github/codeql-action/upload-sarif@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
         with:
           sarif_file: trivy-results.sarif
+
+  # On a published release, attach an SBOM plus a cosign-signed checksums file to
+  # the GitHub Release. The image itself is already cosign-signed in GHCR; these
+  # release-level assets are what Scorecard's Signed-Releases check inspects.
+  release-assets:
+    needs: build
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # upload assets to the GitHub Release
+      packages: read     # pull the image to generate its SBOM
+      id-token: write    # cosign keyless signing of the checksums
+    steps:
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - name: Log in to GHCR
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate SBOM (SPDX) from the released image
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build.outputs.digest }}
+          format: spdx-json
+          output-file: sbom.spdx.json
+
+      - name: Sign and attach release artifacts
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          DIGEST: ${{ needs.build.outputs.digest }}
+          TAG: ${{ github.event.release.tag_name }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Record exactly which immutable image this release refers to.
+          echo "${IMAGE}@${DIGEST}" > image-digest.txt
+          # Checksums over the file assets, then keyless-sign them. The .sig +
+          # .pem pair is what Scorecard recognises as a signed release.
+          sha256sum sbom.spdx.json image-digest.txt > checksums.txt
+          cosign sign-blob --yes checksums.txt \
+            --output-signature checksums.txt.sig \
+            --output-certificate checksums.txt.pem
+          gh release upload "$TAG" \
+            sbom.spdx.json image-digest.txt checksums.txt \
+            checksums.txt.sig checksums.txt.pem \
+            --repo "$GITHUB_REPOSITORY" --clobber
