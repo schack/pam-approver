@@ -194,6 +194,9 @@ jobs:
           image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build.outputs.digest }}
           format: spdx-json
           output-file: sbom.spdx.json
+          # We attach our own SBOM (and signed checksums) below; don't let the
+          # action also auto-upload a second, differently-named SBOM asset.
+          upload-release-assets: false
 
       - name: Sign and attach release artifacts
         env:
