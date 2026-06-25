@@ -119,16 +119,19 @@ docker pull ghcr.io/schack/pam-approver:latest
 docker pull ghcr.io/schack/pam-approver@sha256:<digest>
 ```
 
-Tags are `latest`, `main`, and `sha-<git-sha>` (one per commit). The
-`sha256-*.sig` / `sha256-*.att` entries GHCR lists are the cosign signature and
-SBOM/provenance attestations, **not** images; pull by a real tag or by
-`@sha256:<digest>`, never the `:sha256-…` tag GHCR shows in its install box.
+Tags: `latest` and the CalVer release (e.g. `2026.6.0`, plus the `2026.6`
+minor alias) move only when a [release](https://github.com/schack/pam-approver/releases)
+is published, so each maps to a changelog entry; `main` and `sha-<git-sha>`
+track the latest commit for testing. The `sha256-*.sig` / `sha256-*.att`
+entries GHCR lists are the cosign signature and SBOM/provenance attestations,
+**not** images; pull by a real tag or by `@sha256:<digest>`, never the
+`:sha256-…` tag GHCR shows in its install box.
 
 Images are keyless-signed via GitHub OIDC; verify before deploy:
 
 ```bash
 cosign verify ghcr.io/schack/pam-approver:latest \
-  --certificate-identity-regexp '^https://github.com/schack/pam-approver/\.github/workflows/cd\.yml@refs/heads/.+$' \
+  --certificate-identity-regexp '^https://github.com/schack/pam-approver/\.github/workflows/cd\.yml@refs/(heads|tags)/.+$' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 

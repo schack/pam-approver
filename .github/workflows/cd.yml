@@ -6,6 +6,8 @@ on:
   push:
     branches:
       - main
+  release:
+    types: [published]
 
 env:
   REGISTRY: ghcr.io
@@ -14,7 +16,7 @@ env:
 # Default-deny at the top; each job grants only the scopes it needs.
 permissions: {}
 
-# Serialize main builds so the newest commit cleanly owns the rolling `latest`
+# Serialize main builds so the newest commit cleanly owns the rolling `main`
 # tag; cancel superseded PR runs.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -95,11 +97,16 @@ jobs:
         uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6.1.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # `main` + `sha-<sha>` track every commit (HEAD, for testing). The
+          # CalVer version tags and `latest` move only when a release is
+          # published, so every advertised version maps to a changelog entry.
           tags: |
             type=ref,event=branch
             type=ref,event=pr
             type=sha,format=long
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}},enable=${{ github.event_name == 'release' }}
+            type=semver,pattern={{major}}.{{minor}},enable=${{ github.event_name == 'release' }}
+            type=raw,value=latest,enable=${{ github.event_name == 'release' }}
 
       - name: Build and push
         id: build
