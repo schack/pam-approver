@@ -21,8 +21,9 @@ categories:
 change-template: '- $TITLE (#$NUMBER)'
 no-changes-template: '- No user-facing changes.'
 
-# Auto-apply a category label from the PR title or branch, so notes sort
-# themselves with no manual labelling. Dependabot already adds `dependencies`.
+# Applied by the dedicated v7 autolabeler sub-action (see the `autolabel` job in
+# .github/workflows/release-drafter.yml) from the PR title or branch. Dependabot
+# adds `dependencies` itself.
 autolabeler:
   - label: enhancement
     title: ['/^feat(\(.+\))?[:!]/i']
