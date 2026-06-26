@@ -1,0 +1,17 @@
+apiVersion: networking.gke.io/v1
+kind: GCPBackendPolicy
+metadata:
+  name: pam-approver
+spec:
+  default:
+    logging:
+      enabled: true
+      sampleRate: 1000000
+    # IAP gates access to the app before any request reaches the pod. Enable
+    # it on the GKE Gateway and configure the OAuth consent/brand separately.
+    iap:
+      enabled: true
+  targetRef:
+    group: ""
+    kind: Service
+    name: pam-approver

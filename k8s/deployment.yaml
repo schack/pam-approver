@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pam-approver
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  minReadySeconds: 10
+  selector:
+    matchLabels:
+      app: pam-approver
+  template:
+    spec:
+      # Static-file pod: it never calls the Kubernetes API, so don't mount a
+      # ServiceAccount token (drops /var/run/secrets/kubernetes.io/...).
+      automountServiceAccountToken: false
+      securityContext:
+        # fsGroup so the emptyDir mounts are writable by the nginx group
+        # (uid/gid 101 in the nginx alpine image).
+        fsGroup: 101
+        # Apply the container runtime's default seccomp filter instead of
+        # running unconfined. Also required for Restricted Pod Security.
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: pam-approver
+          # Pin by digest for real deploys: ghcr.io/schack/pam-approver@sha256:...
+          image: ghcr.io/schack/pam-approver:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+          envFrom:
+            - configMapRef:
+                name: pam-approver
+          resources:
+            requests:
+              memory: 64Mi
+              cpu: 10m
+              ephemeral-storage: 50Mi
+            limits:
+              memory: 64Mi
+              ephemeral-storage: 50Mi
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 30
+          volumeMounts:
+            # nginx writes its pid + temp paths under /tmp (configured in
+            # nginx.conf) and its cache dir under /var/cache/nginx.
+            # entrypoint.sh renders /var/lib/pam-approver/config.js at startup.
+            - name: tmp
+              mountPath: /tmp
+            - name: nginx-cache
+              mountPath: /var/cache/nginx
+            - name: runtime-config
+              mountPath: /var/lib/pam-approver
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 101
+            runAsGroup: 101
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 16Mi
+        - name: nginx-cache
+          emptyDir:
+            sizeLimit: 16Mi
+        - name: runtime-config
+          emptyDir:
+            sizeLimit: 1Mi

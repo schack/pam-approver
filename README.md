@@ -97,8 +97,9 @@ scope, User type **Internal**. Then create a client per environment:
 1. Same as above, but name `pam-approver (prod)`
 2. **Authorised JavaScript origins**: only your production hostname,
    e.g. `https://pam.example.com`. **No localhost.**
-3. Ship the client ID via a Kubernetes Secret/ConfigMap referenced from the
-   pod env (`OAUTH_CLIENT_ID`), or via your existing secret manager.
+3. Ship the client ID via the pod env (`OAUTH_CLIENT_ID`) — a ConfigMap is
+   fine since it's public (the `k8s/` sample sets it in `kustomization.yaml`),
+   or use your secret manager if you'd rather keep it out of git.
 
 </details>
 
@@ -134,9 +135,6 @@ cosign verify ghcr.io/schack/pam-approver:latest \
   --certificate-identity-regexp '^https://github.com/schack/pam-approver/\.github/workflows/cd\.yml@refs/(heads|tags)/.+$' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
-
-See [Run locally](#run-locally) to start it with your environment, or deploy it
-with your normal Kubernetes manifests.
 
 ## Tests
 
@@ -181,6 +179,15 @@ treats them as different origins, and the dev OAuth client only allows the
 
 `.env` is gitignored. You'll need an OAuth client whose **Authorised
 JavaScript origins** include `http://localhost:8080`.
+
+## Deploy to Kubernetes
+
+Sample manifests for **GKE** behind the Gateway API with IAP in front live in
+[`k8s/`](k8s/): a hardened Deployment, a `ClusterIP` Service, a Gateway API
+`HTTPRoute`, and the GKE `GCPBackendPolicy` (IAP) and `HealthCheckPolicy`,
+wired together with kustomize. They are a starting point, not a drop-in — edit
+the placeholder hostname, OAuth client ID and project list first. See
+[`k8s/README.md`](k8s/README.md) for what to change and how to apply.
 
 ## Security posture
 

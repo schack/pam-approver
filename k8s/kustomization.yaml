@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - deployment.yaml
+  - service.yaml
+  - backend-policy.yaml
+  - healthchecks.yaml
+  - http-route.yaml
+
+namespace: pam-approver
+
+# Runtime config baked into /config.js by entrypoint.sh inside the pod.
+# OAUTH_CLIENT_ID is the prod OAuth Web client whose Authorised JavaScript
+# origins include your production hostname (e.g. https://pam.example.com).
+configMapGenerator:
+  - name: pam-approver
+    literals:
+      - OAUTH_CLIENT_ID=123456789-abcdefg.apps.googleusercontent.com
+      - HOSTED_DOMAIN=example.com
+      - PAM_PROJECTS=my-project-id,my-other-project-id
+
+labels:
+  - pairs:
+      app: pam-approver
+    includeSelectors: false
+    includeTemplates: true

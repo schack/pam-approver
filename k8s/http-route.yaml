@@ -1,0 +1,24 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: pam-approver
+spec:
+  parentRefs:
+    # References your existing Gateway. Adjust name/namespace to match it.
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: edge-gateway
+      namespace: pam-approver
+  hostnames:
+    - "pam.example.com"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: pam-approver
+          port: 8080
+          weight: 1

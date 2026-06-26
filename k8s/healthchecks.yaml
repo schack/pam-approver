@@ -1,0 +1,15 @@
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: pam-approver
+spec:
+  default:
+    config:
+      type: HTTP
+      httpHealthCheck:
+        port: 8080
+        requestPath: /healthz
+  targetRef:
+    group: ""
+    kind: Service
+    name: pam-approver

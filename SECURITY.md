@@ -36,6 +36,25 @@ backend and no server-side state.
   read-only root filesystem, drops all Linux capabilities, and sets a strict
   Content-Security-Policy plus the usual hardening headers. `entrypoint.sh`
   validates its environment to prevent breaking out of the rendered `config.js`.
+  The sample Kubernetes manifests in [`k8s/`](k8s/) add pod-level hardening on
+  top (seccomp `RuntimeDefault`, no ServiceAccount token mounted, and a posture
+  that satisfies the Restricted Pod Security Standard).
+
+## Maintainers and access to sensitive resources
+
+pam-approver is maintained by a single person, Henrik Schack (@schack), who
+holds admin access to the GitHub repository and publish access to the GHCR
+container package.
+
+As the sole maintainer, @schack is responsible for all project roles: reviewing
+and merging pull requests, cutting and signing releases, keeping dependencies
+current, and triaging and resolving bug and security reports. There are no other
+members or delegated roles at this time.
+
+There are no long-lived secrets or signing keys to manage: release images are
+signed keyless via GitHub OIDC (Sigstore cosign), the OAuth client ID is public
+by design (not a secret), and no client secret or deployment credential is
+stored in the repository or the image.
 
 ## Verifying the image
 
