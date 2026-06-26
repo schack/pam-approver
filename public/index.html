@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>PAM approvals</title>
+  <!-- Synchronous + before the body so the theme class is set before first
+       paint (no flash). Separate file because the CSP forbids inline scripts. -->
+  <script src="/theme-init.js"></script>
   <link rel="stylesheet" href="/styles.css">
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
@@ -14,27 +17,36 @@
   <script src="/config.js" defer></script>
   <script src="/app.js" type="module" defer></script>
 </head>
-<body class="bg-slate-50 text-slate-900 min-h-screen antialiased">
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 min-h-screen antialiased">
 
-  <header class="bg-white border-b border-slate-200 sticky top-0 z-10">
+  <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-10">
     <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-      <div class="font-semibold text-slate-900 flex items-center gap-2">
+      <div class="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
         <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
         PAM approvals
       </div>
-      <details id="user-menu" class="relative hidden">
-        <summary class="list-none cursor-pointer flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 select-none">
-          <img id="user-picture" alt="" class="w-7 h-7 rounded-full hidden">
-          <span id="user-email" class="hidden sm:inline"></span>
-          <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.24 4.38a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z"/></svg>
-        </summary>
-        <div class="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-lg shadow-lg py-1 text-sm">
-          <div id="user-email-full" class="px-4 py-2 text-slate-500 border-b border-slate-100 truncate"></div>
-          <button type="button" data-action="refresh" class="w-full text-left px-4 py-2 hover:bg-slate-50">Refresh</button>
-          <button type="button" data-action="switch-account" class="w-full text-left px-4 py-2 hover:bg-slate-50">Switch account</button>
-          <button type="button" data-action="sign-out" class="w-full text-left px-4 py-2 hover:bg-slate-50 text-rose-600">Sign out</button>
-        </div>
-      </details>
+      <div class="flex items-center gap-1">
+        <button type="button" data-action="toggle-theme" aria-label="Toggle dark mode" aria-pressed="false"
+                class="p-1.5 rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-slate-100 dark:hover:bg-slate-700 transition">
+          <!-- moon: shown in light mode (click to switch to dark) -->
+          <svg class="w-5 h-5 dark:hidden" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
+          <!-- sun: shown in dark mode (click to switch to light) -->
+          <svg class="w-5 h-5 hidden dark:block" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"/></svg>
+        </button>
+        <details id="user-menu" class="relative hidden">
+          <summary class="list-none cursor-pointer flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100 select-none">
+            <img id="user-picture" alt="" class="w-7 h-7 rounded-full hidden">
+            <span id="user-email" class="hidden sm:inline"></span>
+            <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.24 4.38a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z"/></svg>
+          </summary>
+          <div class="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg py-1 text-sm">
+            <div id="user-email-full" class="px-4 py-2 text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-700 truncate"></div>
+            <button type="button" data-action="refresh" class="w-full text-left px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700">Refresh</button>
+            <button type="button" data-action="switch-account" class="w-full text-left px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700">Switch account</button>
+            <button type="button" data-action="sign-out" class="w-full text-left px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 text-rose-600 dark:text-rose-400">Sign out</button>
+          </div>
+        </details>
+      </div>
     </div>
   </header>
 
@@ -42,15 +54,15 @@
 
     <section id="view-login" class="hidden">
       <div class="min-h-[60vh] flex items-center justify-center">
-        <div class="w-full max-w-sm bg-white border border-slate-200 rounded-2xl shadow-sm p-8 text-center">
+        <div class="w-full max-w-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm p-8 text-center">
           <div class="text-3xl mb-2">&#128274;</div>
           <h1 class="text-xl font-semibold mb-2">PAM approvals</h1>
-          <p class="text-sm text-slate-600 mb-6">Sign in with your Google account to view grants you can approve or deny.</p>
+          <p class="text-sm text-slate-600 dark:text-slate-300 mb-6">Sign in with your Google account to view grants you can approve or deny.</p>
           <button type="button" data-action="sign-in"
-                  class="inline-flex items-center justify-center gap-2 w-full rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-medium py-3 px-4 transition">
+                  class="inline-flex items-center justify-center gap-2 w-full rounded-lg bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 font-medium py-3 px-4 transition">
             Sign in with Google
           </button>
-          <p id="login-error" class="hidden mt-4 text-sm text-rose-600"></p>
+          <p id="login-error" class="hidden mt-4 text-sm text-rose-600 dark:text-rose-400"></p>
         </div>
       </div>
     </section>
@@ -58,19 +70,19 @@
     <section id="view-grants" class="hidden">
       <div class="flex items-center justify-between mb-4">
         <h1 class="text-lg font-semibold">Pending approvals</h1>
-        <button type="button" data-action="refresh" class="text-sm text-slate-600 hover:text-slate-900 inline-flex items-center gap-1">
+        <button type="button" data-action="refresh" class="text-sm text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100 inline-flex items-center gap-1">
           <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311h2.433a.75.75 0 000-1.5H3.989a.75.75 0 00-.75.75v4.242a.75.75 0 001.5 0v-2.43l.31.31a7 7 0 0011.712-3.138.75.75 0 00-1.449-.39zm1.23-3.723a.75.75 0 00.219-.53V2.929a.75.75 0 00-1.5 0V5.36l-.31-.31A7 7 0 003.239 8.188a.75.75 0 101.448.389A5.5 5.5 0 0113.89 6.11l.311.31h-2.432a.75.75 0 000 1.5h4.243a.75.75 0 00.53-.219z" clip-rule="evenodd"/></svg>
           Refresh
         </button>
       </div>
 
-      <div id="error-banner" class="hidden bg-amber-50 border border-amber-200 text-amber-900 rounded-lg px-4 py-3 mb-4 text-sm"></div>
+      <div id="error-banner" class="hidden bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900 text-amber-900 dark:text-amber-200 rounded-lg px-4 py-3 mb-4 text-sm"></div>
 
-      <div id="loading" class="text-center py-12 text-slate-500">Loading…</div>
+      <div id="loading" class="text-center py-12 text-slate-500 dark:text-slate-400">Loading…</div>
 
-      <div id="grants-empty" class="hidden text-center py-16 text-slate-500">
+      <div id="grants-empty" class="hidden text-center py-16 text-slate-500 dark:text-slate-400">
         <div class="text-4xl mb-3">&#9728;&#65039;</div>
-        <div class="font-medium text-slate-700">Nothing waiting on you.</div>
+        <div class="font-medium text-slate-700 dark:text-slate-200">Nothing waiting on you.</div>
         <div class="text-sm mt-1">No pending grants in the configured projects.</div>
       </div>
 
@@ -80,45 +92,45 @@
   </main>
 
   <template id="tpl-grant-card">
-    <article class="grant-card bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-      <header class="px-5 py-4 border-b border-slate-100">
+    <article class="grant-card bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden">
+      <header class="px-5 py-4 border-b border-slate-100 dark:border-slate-700">
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
-            <div data-field="project" class="text-sm text-slate-500 truncate"></div>
-            <div data-field="requester" class="font-medium text-slate-900 truncate"></div>
+            <div data-field="project" class="text-sm text-slate-500 dark:text-slate-400 truncate"></div>
+            <div data-field="requester" class="font-medium text-slate-900 dark:text-slate-100 truncate"></div>
           </div>
           <div class="text-right shrink-0">
-            <div class="text-xs uppercase tracking-wide text-slate-500">Duration</div>
+            <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Duration</div>
             <div data-field="duration" class="font-medium tabular-nums"></div>
           </div>
         </div>
       </header>
       <div class="px-5 py-4 space-y-4">
         <div data-field="roles-row">
-          <div class="text-xs uppercase tracking-wide text-slate-500 mb-1.5">Roles</div>
+          <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1.5">Roles</div>
           <div data-field="roles" class="flex flex-wrap gap-1.5"></div>
         </div>
         <div data-field="resource-row">
-          <div class="text-xs uppercase tracking-wide text-slate-500 mb-1">Resource</div>
-          <div data-field="resource" class="text-sm font-mono break-all text-slate-700"></div>
+          <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1">Resource</div>
+          <div data-field="resource" class="text-sm font-mono break-all text-slate-700 dark:text-slate-300"></div>
         </div>
         <div>
-          <div class="text-xs uppercase tracking-wide text-slate-500 mb-1">Justification</div>
-          <p data-field="justification" class="text-sm whitespace-pre-wrap break-words text-slate-800"></p>
+          <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1">Justification</div>
+          <p data-field="justification" class="text-sm whitespace-pre-wrap break-words text-slate-800 dark:text-slate-200"></p>
         </div>
-        <div class="flex items-center justify-between text-xs text-slate-500">
+        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
           <span data-field="created"></span>
           <span data-field="expires"></span>
         </div>
       </div>
-      <div class="border-t border-slate-100 bg-slate-50 px-5 py-4 space-y-3">
+      <div class="border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-5 py-4 space-y-3">
         <textarea data-field="reason" rows="2" maxlength="1000"
                   placeholder="Reason"
                   aria-label="Reason for approve or deny"
-                  class="w-full text-sm rounded-lg border border-slate-300 bg-white p-2.5 focus:outline-none focus:ring-2 focus:ring-slate-400"></textarea>
+                  class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 p-2.5 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-500"></textarea>
         <div class="grid grid-cols-2 gap-2">
           <button type="button" data-action="deny"
-                  class="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-white border border-rose-200 text-rose-700 hover:bg-rose-50 disabled:opacity-50 font-medium py-2.5 transition">
+                  class="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950 disabled:opacity-50 font-medium py-2.5 transition">
             Deny
           </button>
           <button type="button" data-action="approve"
@@ -131,20 +143,20 @@
   </template>
 
   <template id="tpl-grant-resolved">
-    <article class="resolved-card bg-white rounded-2xl shadow-sm px-5 py-4 flex items-start gap-3">
+    <article class="resolved-card bg-white dark:bg-slate-800 rounded-2xl shadow-sm px-5 py-4 flex items-start gap-3">
       <div data-field="icon-wrap" class="shrink-0 mt-0.5">
         <span data-field="icon" class="inline-flex items-center justify-center w-8 h-8 rounded-full"></span>
       </div>
       <div class="min-w-0 flex-1">
         <div data-field="title" class="font-medium"></div>
-        <div data-field="subtitle" class="text-sm text-slate-600 truncate"></div>
-        <div data-field="reason" class="text-sm text-slate-700 mt-1 italic"></div>
+        <div data-field="subtitle" class="text-sm text-slate-600 dark:text-slate-300 truncate"></div>
+        <div data-field="reason" class="text-sm text-slate-700 dark:text-slate-300 mt-1 italic"></div>
       </div>
     </article>
   </template>
 
   <template id="tpl-role-pill">
-    <span data-field="role" class="inline-flex items-center rounded-md bg-slate-100 text-slate-700 px-2 py-0.5 text-xs font-mono"></span>
+    <span data-field="role" class="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-2 py-0.5 text-xs font-mono"></span>
   </template>
 
 </body>

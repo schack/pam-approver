@@ -1,2 +1,7 @@
 @import "tailwindcss";
 @source "./public/**/*.{html,js}";
+
+/* Drive the `dark:` variant from a `.dark` class on <html> (set by
+   theme-init.js / the header toggle) instead of the OS preference, so the
+   user's explicit choice wins. */
+@custom-variant dark (&:where(.dark, .dark *));
