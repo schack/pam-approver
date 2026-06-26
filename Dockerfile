@@ -66,7 +66,7 @@ COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY nginx/security-headers.conf /etc/nginx/snippets/security-headers.conf
 
 COPY public/index.html /usr/share/nginx/html/index.html
-COPY public/app.js /usr/share/nginx/html/app.js
+COPY public/app.js public/theme-init.js /usr/share/nginx/html/
 COPY --from=assets /work/styles.css /usr/share/nginx/html/styles.css
 
 # Bookmark / home-screen icons + web app manifest (Android add-to-home).

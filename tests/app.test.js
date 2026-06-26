@@ -13,6 +13,7 @@ import {
   createLimiter,
   readJSON,
   tokenIsFresh,
+  nextTheme,
 } from "../public/app.js";
 
 test("escapeHtml escapes every HTML-significant character", () => {
@@ -129,4 +130,9 @@ test("createLimiter propagates rejection without stalling the queue", async () =
   await assert.rejects(limit(() => Promise.reject(new Error("boom"))), /boom/);
   // Queue still drains after a failure.
   assert.equal(await limit(() => Promise.resolve("ok")), "ok");
+});
+
+test("nextTheme flips between light and dark", () => {
+  assert.equal(nextTheme(true), "light");   // currently dark -> switch to light
+  assert.equal(nextTheme(false), "dark");   // currently light -> switch to dark
 });

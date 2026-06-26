@@ -13,6 +13,7 @@ const USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
 const SCOPES = "openid email profile https://www.googleapis.com/auth/cloud-platform";
 const TOKEN_KEY = "pam.token";
 const USER_KEY = "pam.user";
+const THEME_KEY = "pam.theme";
 const REASON_MAX = 1000;
 // Max PAM API calls in flight at once across the whole grant refresh.
 // One shared pool feeds both entitlement-list and grant-search calls; calls
@@ -110,11 +111,26 @@ function bindUI() {
     const t = e.target.closest("[data-action]");
     if (!t) return;
     const action = t.dataset.action;
+    if (action === "toggle-theme") return toggleTheme();
     if (action === "sign-in") return startSignIn(false);
     if (action === "switch-account") return startSignIn(true);
     if (action === "sign-out") return signOut();
     if (action === "refresh") return refreshGrants();
   });
+
+  // theme-init.js already set the class before paint; sync the button's state.
+  const themeBtn = $("[data-action=toggle-theme]");
+  if (themeBtn) themeBtn.setAttribute("aria-pressed", String(document.documentElement.classList.contains("dark")));
+}
+
+// Flip light/dark, persist the explicit choice, and reflect it on the button.
+function toggleTheme() {
+  const root = document.documentElement;
+  const theme = nextTheme(root.classList.contains("dark"));
+  root.classList.toggle("dark", theme === "dark");
+  try { localStorage.setItem(THEME_KEY, theme); } catch (_) { /* storage blocked */ }
+  const btn = $("[data-action=toggle-theme]");
+  if (btn) btn.setAttribute("aria-pressed", String(theme === "dark"));
 }
 
 function showLogin() {
@@ -143,7 +159,7 @@ function showFatal(msg) {
     `<div class="max-w-lg mx-auto px-4 py-12 text-center">
        <div class="text-3xl mb-2">&#9888;&#65039;</div>
        <div class="font-semibold mb-2">pam-approver cannot start</div>
-       <div class="text-sm text-slate-600">${escapeHtml(msg)}</div>
+       <div class="text-sm text-slate-600 dark:text-slate-300">${escapeHtml(msg)}</div>
      </div>`;
 }
 
@@ -503,6 +519,11 @@ export function escapeHtml(s) {
 
 export function readJSON(store, key) {
   try { const v = store.getItem(key); return v ? JSON.parse(v) : null; } catch (_) { return null; }
+}
+
+// Given whether dark mode is currently active, the theme to switch to.
+export function nextTheme(isDark) {
+  return isDark ? "light" : "dark";
 }
 
 // Minimal p-limit-style concurrency gate: returns a function that runs at most
