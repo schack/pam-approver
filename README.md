@@ -2,6 +2,8 @@
 
 [![CD Pipeline](https://github.com/schack/pam-approver/actions/workflows/cd.yml/badge.svg)](https://github.com/schack/pam-approver/actions/workflows/cd.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/schack/pam-approver/badge)](https://scorecard.dev/viewer/?uri=github.com/schack/pam-approver)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13345/badge)](https://www.bestpractices.dev/projects/13345)
+[![OpenSSF Baseline](https://www.bestpractices.dev/projects/13345/baseline)](https://www.bestpractices.dev/projects/13345)
 
 Mobile-friendly approver UI for Google Cloud Privileged Access Manager (PAM).
 
