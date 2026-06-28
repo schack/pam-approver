@@ -5,3 +5,12 @@
    theme-init.js / the header toggle) instead of the OS preference, so the
    user's explicit choice wins. */
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* Theme the root element (the canvas behind <body>), not just <body>, so the
+   area revealed by overscroll/rubber-band scrolling matches the theme instead
+   of flashing the browser-default white. color-scheme also gives dark
+   scrollbars/form controls and a dark loading canvas. */
+@layer base {
+  html { background-color: #f8fafc; color-scheme: light; }       /* slate-50  */
+  html.dark { background-color: #0f172a; color-scheme: dark; }   /* slate-900 */
+}
