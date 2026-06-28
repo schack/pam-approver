@@ -128,6 +128,9 @@ function toggleTheme() {
   const root = document.documentElement;
   const theme = nextTheme(root.classList.contains("dark"));
   root.classList.toggle("dark", theme === "dark");
+  // Keep the inline color-scheme (set by theme-init.js) in sync, or its higher
+  // specificity would override the class-based rule after a toggle.
+  root.style.colorScheme = theme === "dark" ? "dark" : "light";
   try { localStorage.setItem(THEME_KEY, theme); } catch (_) { /* storage blocked */ }
   const btn = $("[data-action=toggle-theme]");
   if (btn) btn.setAttribute("aria-pressed", String(theme === "dark"));
