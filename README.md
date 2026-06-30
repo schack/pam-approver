@@ -138,6 +138,11 @@ cosign verify ghcr.io/schack/pam-approver:latest \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 
+Each published [release](https://github.com/schack/pam-approver/releases) also
+carries signed file assets (SBOM, image digest, and a cosign-signed
+`checksums.txt`); see
+[SECURITY.md](SECURITY.md#verifying-release-artifacts) for how to verify them.
+
 ## Tests
 
 No npm install; the suites run with tooling that's already on the machine
