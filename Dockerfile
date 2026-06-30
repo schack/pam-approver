@@ -5,7 +5,7 @@
 # Cooled (>21d), multi-arch, mirror.gcr.io for faster GCP pulls.
 # Pin the tag *and* the digest so Dependabot stays on bookworm-slim
 # (a bare digest tracks `latest`, which drifts onto the full Debian image).
-FROM --platform=$BUILDPLATFORM mirror.gcr.io/library/debian:bookworm-20260610-slim@sha256:96e378d7e6531ac9a15ad505478fcc2e69f371b10f5cdf87857c4b8188404716 AS assets
+FROM --platform=$BUILDPLATFORM mirror.gcr.io/library/debian:bookworm-20260623-slim@sha256:60eac759739651111db372c07be67863818726f754804b8707c90979bda511df AS assets
 
 ARG BUILDARCH
 ARG TAILWIND_VERSION=4.3.0
