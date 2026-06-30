@@ -72,3 +72,23 @@ Inspect the embedded provenance/SBOM attestations with:
 ```bash
 docker buildx imagetools inspect ghcr.io/schack/pam-approver:latest
 ```
+
+## Verifying release artifacts
+
+Each published GitHub release also carries file assets, separate from the
+container image: an SPDX **SBOM** (`sbom.spdx.json`), the immutable image
+reference the release was built from (`image-digest.txt`), a `checksums.txt`
+over those files, and a Sigstore bundle that keyless-signs the checksums
+(`checksums.txt.sigstore.json`).
+
+Download the assets from the release, verify the signed checksums (same OIDC
+identity as the image, but at a tag ref), then check the files against them:
+
+```bash
+cosign verify-blob checksums.txt \
+  --bundle checksums.txt.sigstore.json \
+  --certificate-identity-regexp '^https://github.com/schack/pam-approver/\.github/workflows/cd\.yml@refs/tags/.+$' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+
+sha256sum -c checksums.txt
+```
