@@ -235,3 +235,20 @@ the placeholder hostname, OAuth client ID and project list first. See
 
 - Server-side audit logging: PAM Cloud Audit Logs already record every
   approve/deny with the actor's email and the reason.
+
+## Known limitations
+
+How the app discovers pending grants is deliberately simple, and that
+simplicity comes with trade-offs:
+
+- **The project list is manual.** Discovery scans exactly the projects listed
+  in `PAM_PROJECTS` (baked into `/config.js` at container start). There is no
+  PAM API to enumerate every entitlement an approver can act on across an
+  organisation, so the list has to be maintained by hand. A new project with
+  entitlements stays invisible until someone updates `PAM_PROJECTS` and
+  redeploys.
+- **Project-scope entitlements only.** Every request targets
+  `projects/{project}/locations/global/entitlements/...`. PAM entitlements can
+  also live at folder and organisation scope
+  (https://cloud.google.com/iam/docs/pam-overview); grants under those are not
+  discovered.
