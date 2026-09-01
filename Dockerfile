@@ -54,12 +54,20 @@ RUN tailwindcss -i tailwind.input.css -o /work/styles.css --minify
 # slim ships no curl.
 # Pin the tag *and* the digest: a bare digest gives Dependabot no variant
 # to preserve, so it tracks `latest` and drifts onto the larger Debian
-# image. The explicit -alpine3.23-slim tag keeps updates on this variant.
-FROM mirror.gcr.io/library/nginx:1.31.2-alpine3.23-slim@sha256:dd722b8ee8794f3c273bfaf8b5351b0652a68ccd73c17e5f0d029857a58f25ef AS runtime
+# image. Keep the suffix at the floating `-alpine-slim`, never an explicit
+# `-alpine3.N-slim`: Dependabot only offers candidates whose tag suffix
+# matches exactly, and nginx moves to the next Alpine minor on release, so
+# a pinned Alpine minor strands this line with no update and no warning.
+FROM mirror.gcr.io/library/nginx:1.31.3-alpine-slim@sha256:45b82ed5f285b90d63df07ba70430fdd8f25624b416617d9e6dc93412b2006dc AS runtime
 
-# Drop the upstream default site config so our config.d/default.conf is
-# the only server.
-RUN rm /etc/nginx/conf.d/default.conf
+# Patch OS packages against the current Alpine repo. The official nginx
+# image is only rebuilt on an nginx release, so it can ship a stale
+# libssl3/libcrypto3 for weeks after Alpine publishes the fix; pinning a
+# newer nginx tag does not help because every tag lags the same way.
+# Also drop the upstream default site config so our config.d/default.conf
+# is the only server. Both in one RUN to satisfy hadolint DL3059.
+RUN apk --no-cache upgrade \
+    && rm /etc/nginx/conf.d/default.conf
 
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf

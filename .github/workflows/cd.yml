@@ -152,6 +152,9 @@ jobs:
           format: sarif
           output: trivy-results.sarif
           severity: HIGH,CRITICAL
+          # `severity` alone does not filter SARIF, so LOW/MEDIUM findings
+          # still reach the Security tab. This applies it to the SARIF too.
+          limit-severities-for-sarif: true
           # Report-only: base-image CVEs are often out of our control, so never
           # fail the build — findings surface in the Security tab.
           exit-code: '0'
