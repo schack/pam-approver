@@ -5,7 +5,7 @@
 # Cooled (>21d), multi-arch, mirror.gcr.io for faster GCP pulls.
 # Pin the tag *and* the digest so Dependabot stays on bookworm-slim
 # (a bare digest tracks `latest`, which drifts onto the full Debian image).
-FROM --platform=$BUILDPLATFORM mirror.gcr.io/library/debian:bookworm-20260824-slim@sha256:88200866dfff7ea7f5cbcb6ec7c8a701889efe6fe859fe64d6990e4b07ea4171 AS assets
+FROM --platform=$BUILDPLATFORM mirror.gcr.io/library/debian:bookworm-20260918-slim@sha256:3783cc01769c7b2b1b83a5c5ad96c815348e28ed7da68e2e3687004faa906251 AS assets
 
 ARG BUILDARCH
 ARG TAILWIND_VERSION=4.3.3
@@ -58,7 +58,7 @@ RUN tailwindcss -i tailwind.input.css -o /work/styles.css --minify
 # `-alpine3.N-slim`: Dependabot only offers candidates whose tag suffix
 # matches exactly, and nginx moves to the next Alpine minor on release, so
 # a pinned Alpine minor strands this line with no update and no warning.
-FROM mirror.gcr.io/library/nginx:1.31.5-alpine-slim@sha256:3b171d7224b669faa3cc2137fea0a65301791df1ec1f271ebd2a2b7461f7fade AS runtime
+FROM mirror.gcr.io/library/nginx:1.31.6-alpine-slim@sha256:80149a0e5bc9fa0b8beaff5b8a453f71ba8ba038895d418381297ffa5cd57782 AS runtime
 
 # Patch OS packages against the current Alpine repo. The official nginx
 # image is only rebuilt on an nginx release, so it can ship a stale
