@@ -58,7 +58,7 @@ RUN tailwindcss -i tailwind.input.css -o /work/styles.css --minify
 # `-alpine3.N-slim`: Dependabot only offers candidates whose tag suffix
 # matches exactly, and nginx moves to the next Alpine minor on release, so
 # a pinned Alpine minor strands this line with no update and no warning.
-FROM mirror.gcr.io/library/nginx:1.31.9-alpine-slim@sha256:5bfced78d24d644270bedb0a9968697042e38d5c03fb6354603df025279c1cbe AS runtime
+FROM mirror.gcr.io/library/nginx:1.31.10-alpine-slim@sha256:449c1359f3f0b198f4e99ee8a2fcfa2160ab8a44b9d738473a427a12a75ff05f AS runtime
 
 # Patch OS packages against the current Alpine repo. The official nginx
 # image is only rebuilt on an nginx release, so it can ship a stale
